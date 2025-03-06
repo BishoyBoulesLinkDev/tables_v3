@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { TreeSelect } from "antd";
 import type { TreeSelectProps } from "antd";
 import { useHospitals } from "../context/HospitalContext";
@@ -29,31 +29,39 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
     }));
   };
 
-  const treeData = transformToTreeData(data);
+  const treeData = React.useMemo(() => transformToTreeData(data), [data]);
 
-  const handleChange = (selectedValues: string[]) => {
-    // Convert selected IDs to hospital objects
-    const selectedHospitalObjects = selectedValues
-      .map((id) => {
-        for (const city of data) {
-          for (const institute of city.children) {
-            const hospital = institute.children.find((h) => h.id === id);
-            if (hospital) return hospital;
+  const handleChange = React.useCallback(
+    (selectedValues: string[]) => {
+      const selectedHospitalObjects = selectedValues
+        .map((id) => {
+          for (const city of data) {
+            for (const institute of city.children || []) {
+              const hospital = institute.children?.find((h) => h.id === id);
+              if (hospital) return hospital;
+            }
           }
-        }
-        return null;
-      })
-      .filter((hospital): hospital is HospitalNode => hospital !== null);
+          return null;
+        })
+        .filter((hospital): hospital is HospitalNode => hospital !== null);
 
-    setSelectedHospitals(selectedHospitalObjects);
-  };
+      setSelectedHospitals(selectedHospitalObjects);
+    },
+    [data, setSelectedHospitals]
+  );
+
+  useEffect(() => {
+    if (selectedHospitals.length === 0) {
+      handleChange([]);
+    }
+  }, [handleChange, selectedHospitals.length]);
 
   return (
     <div className="p-8 bg-gray-50 w-full">
       <div className="w-full mx-auto">
         <TreeSelect
           treeData={treeData}
-          value={selectedHospitals.map((hospital) => hospital.id)} // Convert Hospital objects to IDs
+          value={selectedHospitals.map((hospital) => hospital.id)}
           onChange={handleChange}
           treeCheckable={true}
           showSearch={true}

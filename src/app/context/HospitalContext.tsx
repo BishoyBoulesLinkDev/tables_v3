@@ -25,14 +25,17 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
     setIsClient(true);
   }, []);
 
+  const value = React.useMemo(
+    () => ({
+      selectedHospitals,
+      setSelectedHospitals,
+      isClient,
+    }),
+    [selectedHospitals, isClient]
+  );
+
   return (
-    <HospitalContext.Provider
-      value={{
-        selectedHospitals,
-        setSelectedHospitals,
-        isClient,
-      }}
-    >
+    <HospitalContext.Provider value={value}>
       {children}
     </HospitalContext.Provider>
   );

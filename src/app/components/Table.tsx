@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import { Table, Input } from "antd";
 import type { DragEndEvent } from "@dnd-kit/core";
 import {
@@ -23,13 +23,14 @@ interface Hospital {
 
 export default function Tables() {
   const { selectedHospitals, setSelectedHospitals, isClient } = useHospitals();
-
-  const [originalOrder, setOriginalOrder] = useState<Hospital[]>(() => []);
-
+  const [originalOrder, setOriginalOrder] = useState<Hospital[]>([]);
   const [manualOrder, setManualOrder] = useState<{ [key: string]: number }>({});
+
   useEffect(() => {
-    setOriginalOrder(selectedHospitals);
-  }, [selectedHospitals]);
+    if (isClient) {
+      setOriginalOrder(selectedHospitals);
+    }
+  }, [selectedHospitals, isClient]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -38,6 +39,7 @@ export default function Tables() {
       },
     })
   );
+
   const debouncedUpdateOrder = useCallback(
     debounce((record: Hospital, newValue: number) => {
       const newIndex = newValue - 1;
@@ -55,10 +57,6 @@ export default function Tables() {
     }, 300),
     [originalOrder, setSelectedHospitals]
   );
-
-  if (!isClient) {
-    return null;
-  }
 
   const onDragEnd = ({ active, over }: DragEndEvent) => {
     if (active.id !== over?.id) {
@@ -193,6 +191,16 @@ export default function Tables() {
       render: (_: unknown, record: Hospital) => getCity(record.id),
     },
   ];
+
+  if (!isClient) {
+    return (
+      <div className="w-full h-32 bg-gray-50 animate-pulse rounded-md">
+        <div className="h-full flex items-center justify-center text-gray-400">
+          Loading...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <main className="table">
