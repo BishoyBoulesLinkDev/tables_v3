@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { TreeSelect } from "antd";
+import { ConfigProvider, TreeSelect } from "antd";
 import type { TreeSelectProps } from "antd";
 import { useHospitals } from "../context/HospitalContext";
 import { useMediaQuery } from "react-responsive";
@@ -58,6 +58,7 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
       className={`p-4 sm:p-8 bg-gray-50 w-full ${isMobile ? "mb-4" : "mb-8"}`}
     >
       <div className="w-full mx-auto">
+        
         <TreeSelect
           treeData={treeData}
           value={selectedHospitals.map((hospital) => hospital.id)}
@@ -79,6 +80,7 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
           treeDefaultExpandAll
           direction="rtl"
           className="custom-tree-select"
+          treeNodeFilterProp="title"
         />
       </div>
     </div>

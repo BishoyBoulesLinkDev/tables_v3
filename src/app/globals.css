@@ -19,6 +19,12 @@
   }
 }
 
+html,
+body {
+  width: 100vw;
+  min-height: 100vh;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -52,8 +58,10 @@ body {
   display: none;
 }
 
-.ant-select-dropdown {
-  min-width: 500px !important;
+@media (min-width: 768px) {
+  .ant-select-dropdown {
+    min-width: 500px !important;
+  }
 }
 
 .loading-placeholder {
@@ -95,8 +103,8 @@ body {
   table-layout: fixed;
 }
 
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr > td {
+.ant-table-thead>tr>th,
+.ant-table-tbody>tr>td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -123,9 +131,6 @@ body {
 
 /* Responsive table styles */
 @media (max-width: 768px) {
-  .ant-table-wrapper {
-    margin: 0 -16px;
-  }
 
   .ant-table {
     font-size: 14px;
