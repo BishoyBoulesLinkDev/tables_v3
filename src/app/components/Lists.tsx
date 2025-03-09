@@ -4,6 +4,7 @@ import React from "react";
 import { TreeSelect } from "antd";
 import type { TreeSelectProps } from "antd";
 import { useHospitals } from "../context/HospitalContext";
+import { useMediaQuery } from "react-responsive";
 
 interface HospitalNode {
   id: string;
@@ -28,6 +29,7 @@ const transformToTreeData = (
 
 export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
   const { selectedHospitals, setSelectedHospitals } = useHospitals();
+  const isMobile = useMediaQuery({ maxWidth: 768 });
 
   const treeData = React.useMemo(() => transformToTreeData(data), [data]);
 
@@ -52,7 +54,9 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
   );
 
   return (
-    <div className="p-8 bg-gray-50 w-full">
+    <div
+      className={`p-4 sm:p-8 bg-gray-50 w-full ${isMobile ? "mb-4" : "mb-8"}`}
+    >
       <div className="w-full mx-auto">
         <TreeSelect
           treeData={treeData}
@@ -63,9 +67,13 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
           placeholder="المستشفيات المتاحة"
           style={{
             width: "100%",
-            height: "50px",
+            height: isMobile ? "40px" : "50px",
           }}
-          dropdownStyle={{ maxHeight: 400, overflow: "auto" }}
+          dropdownStyle={{
+            maxHeight: isMobile ? 300 : 400,
+            overflow: "auto",
+            fontSize: isMobile ? "14px" : "16px",
+          }}
           allowClear
           multiple
           treeDefaultExpandAll

@@ -15,6 +15,7 @@ import debounce from "lodash/debounce";
 import data from "../data/database.json";
 import { DraggableBodyRow } from "./DraggableBodyRow";
 import { useHospitals } from "../context/HospitalContext";
+import { useMediaQuery } from "react-responsive";
 
 interface Hospital {
   id: string;
@@ -157,12 +158,14 @@ export default function Tables() {
     [selectedHospitals]
   );
 
+  const isMobile = useMediaQuery({ maxWidth: 768 });
+
   const columns = [
     {
       title: "إجراءات",
       dataIndex: "remove",
       key: "remove",
-      width: "10%",
+      width: isMobile ? "20%" : "10%",
       render: (_: unknown, record: Hospital) => (
         <button
           type="button"
@@ -177,7 +180,7 @@ export default function Tables() {
       title: "الترتيب",
       dataIndex: "sort",
       key: "sort",
-      width: "15%",
+      width: isMobile ? "25%" : "15%",
       sorter: (a: Hospital, b: Hospital) => {
         const getOrder = (record: Hospital) => {
           return (
@@ -218,31 +221,35 @@ export default function Tables() {
       title: "المستشفى",
       dataIndex: "text",
       key: "hospital",
-      width: "35%",
+      width: isMobile ? "55%" : "35%",
       ellipsis: true,
     },
-    {
-      title: "الإدارة",
-      dataIndex: "institute",
-      key: "institute",
-      width: "25%",
-      ellipsis: true,
-      sorter: (a: Hospital, b: Hospital) => {
-        return getInstitute(a.id).localeCompare(getInstitute(b.id));
-      },
-      render: (_: unknown, record: Hospital) => getInstitute(record.id),
-    },
-    {
-      title: "المديرية",
-      dataIndex: "city",
-      key: "city",
-      width: "25%",
-      ellipsis: true,
-      sorter: (a: Hospital, b: Hospital) => {
-        return getCity(a.id).localeCompare(getCity(b.id));
-      },
-      render: (_: unknown, record: Hospital) => getCity(record.id),
-    },
+    ...(!isMobile
+      ? [
+          {
+            title: "الإدارة",
+            dataIndex: "institute",
+            key: "institute",
+            width: "25%",
+            ellipsis: true,
+            sorter: (a: Hospital, b: Hospital) => {
+              return getInstitute(a.id).localeCompare(getInstitute(b.id));
+            },
+            render: (_: unknown, record: Hospital) => getInstitute(record.id),
+          },
+          {
+            title: "المديرية",
+            dataIndex: "city",
+            key: "city",
+            width: "25%",
+            ellipsis: true,
+            sorter: (a: Hospital, b: Hospital) => {
+              return getCity(a.id).localeCompare(getCity(b.id));
+            },
+            render: (_: unknown, record: Hospital) => getCity(record.id),
+          },
+        ]
+      : []),
   ];
 
   if (!isClient) {
