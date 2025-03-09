@@ -68,9 +68,11 @@ body {
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 0.8;
   }
+
   100% {
     opacity: 0.6;
   }
@@ -98,7 +100,8 @@ body {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300px; /* Adjust this value based on your needs */
+  max-width: 300px;
+  /* Adjust this value based on your needs */
 }
 
 /* Specific column widths */
