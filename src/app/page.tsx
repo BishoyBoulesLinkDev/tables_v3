@@ -9,7 +9,7 @@ export default function Home() {
   return (
     <ConfigProvider direction="rtl">
       <Layout>
-          <h1 className="font-extrabold text-4xl">جدول الرغبات</h1>
+          <h1 className="font-extrabold text-4xl text-black p-2 text-center">جدول الرغبات</h1>
           <Content>
           <HospitalProvider>
             <div className="w-full max-w-6xl mx-auto">
