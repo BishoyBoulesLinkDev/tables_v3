@@ -64,9 +64,11 @@ body {
   0% {
     opacity: 0.6;
   }
+
   50% {
     opacity: 0.8;
   }
+
   100% {
     opacity: 0.6;
   }
@@ -89,12 +91,13 @@ body {
   table-layout: fixed;
 }
 
-.ant-table-thead > tr > th,
-.ant-table-tbody > tr > td {
+.ant-table-thead>tr>th,
+.ant-table-tbody>tr>td {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 300px; /* Adjust this value based on your needs */
+  max-width: 300px;
+  /* Adjust this value based on your needs */
 }
 
 /* Specific column widths */
@@ -112,4 +115,8 @@ body {
 .ant-table-cell:nth-child(4) {
   width: 25%;
   min-width: 150px;
+}
+
+.ant-table-header {
+  max-width: 1088px;
 }
