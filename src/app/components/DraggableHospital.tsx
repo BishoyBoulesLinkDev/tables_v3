@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { NumberInput, Checkbox } from '@patternfly/react-core';
-import { useSortable } from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
+import { useState } from "react";
+import { NumberInput, Checkbox } from "@patternfly/react-core";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
 interface DraggableHospitalProps {
   id: string;
@@ -23,7 +23,14 @@ export const DraggableHospital: React.FC<DraggableHospitalProps> = ({
   onCheck,
 }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
     id,
   });
 
@@ -61,6 +68,14 @@ export const DraggableHospital: React.FC<DraggableHospitalProps> = ({
           e.stopPropagation();
           setIsEditing(true);
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.stopPropagation();
+            setIsEditing(true);
+          }
+        }}
+        tabIndex={0}
+        role="button"
       >
         {isEditing ? (
           <NumberInput
@@ -69,19 +84,25 @@ export const DraggableHospital: React.FC<DraggableHospitalProps> = ({
             max={totalItems}
             value={index + 1}
             onChange={(event) => {
-              const value = parseInt((event.target as HTMLInputElement).value, 10);
-              if (!isNaN(value)) {
+              const value = Number.parseInt(
+                (event.target as HTMLInputElement).value,
+                10
+              );
+              if (!Number.isNaN(value)) {
                 handleNumberChange(value);
               }
             }}
             onBlur={() => setIsEditing(false)}
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                const value = parseInt((e.target as HTMLInputElement).value, 10);
+              if (e.key === "Enter") {
+                const value = Number.parseInt(
+                  (e.target as HTMLInputElement).value,
+                  10
+                );
                 if (!isNaN(value)) {
                   handleNumberChange(value);
                 }
-              } else if (e.key === 'Escape') {
+              } else if (e.key === "Escape") {
                 setIsEditing(false);
               }
             }}

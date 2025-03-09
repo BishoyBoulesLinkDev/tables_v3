@@ -1,6 +1,12 @@
 "use client";
 
-import React, { createContext, useState, useContext, useEffect } from "react";
+import React, {
+  createContext,
+  useState,
+  useContext,
+  useEffect,
+  useCallback,
+} from "react";
 
 interface Hospital {
   id: string;
@@ -25,14 +31,25 @@ export function HospitalProvider({ children }: { children: React.ReactNode }) {
     setIsClient(true);
   }, []);
 
+  const setHospitals = useCallback(
+    (newHospitals: Hospital[] | ((prev: Hospital[]) => Hospital[])) => {
+      setSelectedHospitals(newHospitals);
+    },
+    []
+  );
+
   const value = React.useMemo(
     () => ({
       selectedHospitals,
-      setSelectedHospitals,
+      setSelectedHospitals: setHospitals,
       isClient,
     }),
-    [selectedHospitals, isClient]
+    [selectedHospitals, setHospitals, isClient]
   );
+
+  if (!isClient) {
+    return null;
+  }
 
   return (
     <HospitalContext.Provider value={value}>

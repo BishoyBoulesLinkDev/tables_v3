@@ -40,43 +40,62 @@ export default function Tables() {
     })
   );
 
-  const debouncedUpdateOrder = useCallback(
-    debounce((record: Hospital, newValue: number) => {
+  const debouncedUpdate = debounce(
+    (record: Hospital, newValue: number, origOrder: Hospital[]) => {
       const newIndex = newValue - 1;
-      const currentIndex = originalOrder.findIndex((h) => h.id === record.id);
+      const currentIndex = origOrder.findIndex((h) => h.id === record.id);
 
-      setManualOrder((prev) => {
-        return updateOrderNumbers(record.id, newValue, prev);
-      });
-
-      const newArray = [...originalOrder];
+      const newArray = [...origOrder];
       const [removed] = newArray.splice(currentIndex, 1);
       newArray.splice(newIndex, 0, removed);
+
       setOriginalOrder(newArray);
       setSelectedHospitals(newArray);
-    }, 300),
-    [originalOrder, setSelectedHospitals]
+      setManualOrder((prev) => updateOrderNumbers(record.id, newValue, prev));
+    },
+    300
   );
 
-  const onDragEnd = ({ active, over }: DragEndEvent) => {
-    if (active.id !== over?.id) {
-      setSelectedHospitals((previous) => {
-        const activeIndex = previous.findIndex((h) => h.id === active.id);
-        const overIndex = previous.findIndex((h) => h.id === over?.id);
+  const debouncedUpdateOrder = useCallback(
+    (record: Hospital, newValue: number) => {
+      debouncedUpdate(record, newValue, originalOrder);
+    },
+    [debouncedUpdate, originalOrder]
+  );
 
-        setManualOrder((prev) => {
-          const newOrder = { ...prev };
-          newOrder[active.id as string] = overIndex + 1;
-          return newOrder;
+  useEffect(() => {
+    return () => {
+      debouncedUpdate.cancel();
+    };
+  }, [debouncedUpdate]);
+
+  const onDragEnd = useCallback(
+    ({ active, over }: DragEndEvent) => {
+      if (active.id !== over?.id) {
+        const activeIndex = selectedHospitals.findIndex(
+          (h) => h.id === active.id
+        );
+        const overIndex = selectedHospitals.findIndex((h) => h.id === over?.id);
+
+        const newOrder = arrayMove(
+          [...selectedHospitals],
+          activeIndex,
+          overIndex
+        );
+
+        Promise.resolve().then(() => {
+          setOriginalOrder(newOrder);
+          setSelectedHospitals(newOrder);
+          setManualOrder((prev) => {
+            const newManualOrder = { ...prev };
+            newManualOrder[active.id as string] = overIndex + 1;
+            return newManualOrder;
+          });
         });
-
-        const newOrder = arrayMove(previous, activeIndex, overIndex);
-        setOriginalOrder(newOrder);
-
-        return newOrder;
-      });
-    }
-  };
+      }
+    },
+    [selectedHospitals]
+  );
 
   const updateOrderNumbers = (
     hospitalId: string,
@@ -85,11 +104,11 @@ export default function Tables() {
   ) => {
     const newOrder = { ...currentManualOrder };
 
-    Object.keys(newOrder).forEach((key) => {
+    for (const key of Object.keys(newOrder)) {
       if (newOrder[key] === newValue) {
         delete newOrder[key];
       }
-    });
+    }
 
     newOrder[hospitalId] = newValue;
     return newOrder;
@@ -119,7 +138,41 @@ export default function Tables() {
     return "";
   };
 
+  const handleRemove = useCallback(
+    (hospitalId: string) => {
+      const newSelectedHospitals = selectedHospitals.filter(
+        (hospital) => hospital.id !== hospitalId
+      );
+
+      Promise.resolve().then(() => {
+        setSelectedHospitals(newSelectedHospitals);
+        setOriginalOrder(newSelectedHospitals);
+        setManualOrder((prev) => {
+          const newOrder = { ...prev };
+          delete newOrder[hospitalId];
+          return newOrder;
+        });
+      });
+    },
+    [selectedHospitals]
+  );
+
   const columns = [
+    {
+      title: "إجراءات",
+      dataIndex: "remove",
+      key: "remove",
+      width: "10%",
+      render: (_: unknown, record: Hospital) => (
+        <button
+          type="button"
+          className="cursor-pointer m-0 p-3 text-xl font-extrabold text-red-600 hover:text-red-300"
+          onClick={() => handleRemove(record.id)}
+        >
+          X
+        </button>
+      ),
+    },
     {
       title: "الترتيب",
       dataIndex: "sort",
@@ -148,9 +201,9 @@ export default function Tables() {
             placeholder="الترتيب"
             style={{ width: "60px" }}
             onChange={(e) => {
-              const newValue = parseInt(e.target.value);
+              const newValue = Number.parseInt(e.target.value);
               if (
-                !isNaN(newValue) &&
+                !Number.isNaN(newValue) &&
                 newValue >= 1 &&
                 newValue <= selectedHospitals.length
               ) {

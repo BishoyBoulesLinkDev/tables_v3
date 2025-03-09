@@ -43,6 +43,11 @@ body {
   width: 100% !important;
 }
 
+.custom-tree-select .ant-select-selection-overflow {
+  padding: 4px 0;
+  display: none;
+}
+
 .ant-select-dropdown {
   min-width: 500px !important;
 }
