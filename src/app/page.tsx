@@ -13,7 +13,7 @@ export default function Home() {
           <Content>
           <HospitalProvider>
             <div className="w-full max-w-6xl mx-auto">
-              <HospitalLists data={data.cities} />
+              <HospitalLists />
               <Tables />
             </div>
           </HospitalProvider>
