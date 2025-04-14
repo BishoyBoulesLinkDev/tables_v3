@@ -58,6 +58,11 @@ body {
   display: none;
 }
 
+/* TODO: to be investigated to enable the search */
+.custom-tree-select .ant-select-selection-search {
+  display: block !important;
+}
+
 @media (min-width: 768px) {
   .ant-select-dropdown {
     min-width: 500px !important;
