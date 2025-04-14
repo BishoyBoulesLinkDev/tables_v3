@@ -5,8 +5,6 @@ import { TreeSelect, Spin } from "antd";
 import type { TreeSelectProps } from "antd";
 import { useHospitals } from "../context/HospitalContext";
 import { useMediaQuery } from "react-responsive";
-import myCities from "../data/cities.json";
-import myDatabase from "../data/database.json";
 
 interface City {
   id: string;
@@ -19,87 +17,118 @@ interface HospitalNode {
   children?: HospitalNode[];
 }
 
-interface CityData {
-  id: string;
-  text: string;
-  children?: HospitalNode[];
-}
-
-interface ListsProps {
-  data?: HospitalNode[];
-}
-
 const transformCitiesToTreeData = (cities: City[]): TreeSelectProps["treeData"] => {
   return cities.map((city) => ({
     title: city.name,
     value: city.id,
     key: city.id,
-    selectable: false, // Cities are not selectable
-    isLeaf: false, // Indicate that cities have children
-    children: [], // Start with empty children that will be loaded on demand
+    selectable: false,
+    isLeaf: false, // Mark as not a leaf node to indicate it has children
+    children: [], // Start with empty children array that will be populated on demand
   }));
 };
 
-// Transform hospital nodes to TreeSelect format
 const transformHospitalNodesToTreeData = (nodes: HospitalNode[]): TreeSelectProps["treeData"] => {
   return nodes.map((node) => ({
     title: node.text,
     value: node.id,
     key: node.id,
-    selectable: true, // Institutes and hospitals are selectable
+    selectable: true,
     isLeaf: !node.children || node.children.length === 0,
     children: node.children ? transformHospitalNodesToTreeData(node.children) : undefined,
   }));
 };
 
-// Keep the original transform function for backward compatibility
-const transformToTreeData = (
-  nodes: HospitalNode[],
-  isTopLevel: boolean = true
-): TreeSelectProps["treeData"] => {
-  return nodes.map((node) => ({
-    title: node.text,
-    value: node.id,
-    key: node.id,
-    selectable: !isTopLevel, // Top-level nodes are not selectable
-    children: node.children ? transformToTreeData(node.children, false) : undefined,
-  }));
-};
-
-export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
+export const HospitalLists = () => {
   const { selectedHospitals, setSelectedHospitals } = useHospitals();
   const isMobile = useMediaQuery({ maxWidth: 768 });
 
-  // State to store the cities and loaded data
   const [cities, setCities] = useState<City[]>([]);
   const [treeData, setTreeData] = useState<TreeSelectProps["treeData"]>([]);
   const [loadedCityIds, setLoadedCityIds] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
 
-  // Fetch cities on initial load for dynamic loading
   useEffect(() => {
-    setCities(myCities)
-    const transformedData = transformCitiesToTreeData(cities);
-    setTreeData(transformedData);
+    const fetchCities = async () => {
+      try {
+        const response = await fetch('/data/cities.json');
+        const myCities = await response.json();
+        setCities(myCities);
+        const transformedData = transformCitiesToTreeData(myCities);
+        setTreeData(transformedData);
+      } catch (error) {
+        console.error('Error fetching cities:', error);
+      }
+    };
+
+    fetchCities();  
   }, []);
 
-  // Function to load city data on demand
   const fetchCityData = async (cityId: string) => {
-    if (loadedCityIds.has(cityId)) return;
+    console.log('fetchCityData called with cityId:', cityId);
+    
+    // If this city's data has already been loaded, no need to fetch again
+    if (loadedCityIds.has(cityId)) {
+      console.log('City data already loaded for:', cityId);
+      return;
+    }
     
     setLoading(true);
     try {
-      const data = myDatabase
-      const cityData = data.cities.find((city: CityData) => city.id === cityId);
+      console.log('Cities available in state:', cities);
+      console.log('Fetching data for city ID:', cityId);
+      
+      // Get the city from our local state
+      const cityObj = cities.find(city => city.id === cityId);
+      console.log('Found city object:', cityObj);
+      
+      if (!cityObj) {
+        console.error("City not found in local state:", cityId);
+        return;
+      }
+      
+      // Determine which JSON file to load based on city ID
+      let cityJsonFile;
+      switch(cityId) {
+        case "1":
+          cityJsonFile = '/data/cairo.json';
+          break;
+        case "2":
+          cityJsonFile = '/data/alex.json';
+          break;
+        case "22":
+          cityJsonFile = '/data/luxor.json';
+          break;
+        default:
+          console.error("No matching JSON file for city ID:", cityId);
+          return;
+      }
+      
+      console.log(`Loading data from ${cityJsonFile} for city: ${cityObj.name}`);
+      
+      // Fetch the data from the specific city JSON file
+      const response = await fetch(cityJsonFile);
+      const cityData = await response.json();
       
       if (cityData && cityData.children) {
+        console.log('City children found:', cityData.children.length);
         // Update the tree data with the loaded city data
         setTreeData((prevTreeData) => {
+          if (!prevTreeData) return []; // Safety check for undefined treeData
+          
           const newTreeData = [...prevTreeData];
           const cityIndex = newTreeData.findIndex((node) => node.key === cityId);
           
           if (cityIndex !== -1) {
-            newTreeData[cityIndex].children = transformHospitalNodesToTreeData(cityData.children || []);
+            console.log('Updating city at index:', cityIndex);
+            const transformedChildren = transformHospitalNodesToTreeData(cityData.children || []);
+            console.log('Transformed children:', transformedChildren);
+            newTreeData[cityIndex].children = transformedChildren;
+            
+            // Ensure the city itself remains unselectable even after loading content
+            newTreeData[cityIndex].selectable = false;
+          } else {
+            console.error('City index not found in tree data for ID:', cityId);
           }
           
           return newTreeData;
@@ -107,6 +136,8 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
         
         // Mark the city as loaded
         setLoadedCityIds((prev) => new Set([...prev, cityId]));
+      } else {
+        console.error('No city data or children found for:', cityId);
       }
     } catch (error) {
       console.error("Error fetching city data:", error);
@@ -115,15 +146,32 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
     }
   };
 
-  // Handle load data on expand
-  const onLoadData = ({ id }: { id: string }): Promise<void> => {
+  // This is the function that gets called when a node is expanded in the TreeSelect
+  const onLoadData = (node: any): Promise<void> => {
     return new Promise<void>((resolve) => {
-      if (loadedCityIds.has(id)) {
+      // Extract the city ID from the node
+      console.log('TreeSelect loadData called with node:', node);
+      const nodeId = typeof node.key !== 'undefined' ? node.key : 
+                    (node.value ? node.value : undefined);
+      
+      console.log('Extracted node ID:', nodeId);
+      
+      if (!nodeId) {
+        console.error('Could not extract city ID from node');
         resolve();
         return;
       }
       
-      fetchCityData(id).then(() => resolve());
+      // Fetch the city data
+      fetchCityData(String(nodeId))
+        .then(() => {
+          console.log('Successfully loaded data for city ID:', nodeId);
+          resolve();
+        })
+        .catch(error => {
+          console.error('Error loading city data:', error);
+          resolve(); // Still resolve to prevent hanging UI
+        });
     });
   };
 
@@ -133,9 +181,12 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
     const selectedHospitalObjects: HospitalNode[] = [];
     
     // Search through the loaded tree data to find the selected hospitals
-    const findSelectedHospitals = (nodes: any[]) => {
+    const findSelectedHospitals = (nodes: any[] | undefined) => {
+      if (!nodes) return;
       for (const node of nodes) {
-        if (values.includes(node.value) && node.selectable) {
+        // Only include nodes that are explicitly selectable and not cities
+        if (values.includes(node.value) && node.selectable === true) {
+          console.log('Selected node:', node.title, node.value);
           selectedHospitalObjects.push({
             id: node.value,
             text: node.title as string,
@@ -148,32 +199,11 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
       }
     };
     
-    findSelectedHospitals(treeData);
+    if (treeData) {
+      findSelectedHospitals(treeData);
+    }
     setSelectedHospitals(selectedHospitalObjects);
   };
-
-  // Keep the original change handler for backward compatibility
-  // const handleStaticChange = React.useCallback(
-  //   (checked: string[] | { checked: string[]; halfChecked: string[] }) => {
-  //     if (!data) return;
-      
-  //     const selectedValues = Array.isArray(checked) ? checked : checked.checked;
-  //     const selectedHospitalObjects = selectedValues
-  //       .map((id) => {
-  //         for (const city of data) {
-  //           for (const institute of city.children || []) {
-  //             const hospital = institute.children?.find((h) => h.id === id);
-  //             if (hospital) return hospital;
-  //           }
-  //         }
-  //         return null;
-  //       })
-  //       .filter((hospital): hospital is HospitalNode => hospital !== null);
-
-  //     setSelectedHospitals(selectedHospitalObjects);
-  //   },
-  //   [data, setSelectedHospitals]
-  // );
 
   return (
     <div className={`p-4 sm:p-8 bg-gray-50 w-full ${isMobile ? "mb-4" : "mb-8"} relative`}>
@@ -184,7 +214,7 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
       )}
       <div className="w-full mx-auto">
         <TreeSelect
-          treeData={cities}
+          treeData={treeData || []}
           value={selectedHospitals.map((hospital) => hospital.id)}
           onChange={handleDynamicChange}
           treeCheckable={true}
@@ -203,6 +233,7 @@ export const HospitalLists: React.FC<ListsProps> = ({ data }) => {
           allowClear
           multiple
           treeDefaultExpandAll={false}
+          labelInValue={false}
           direction="rtl"
           className="custom-tree-select"
           treeNodeFilterProp="title"

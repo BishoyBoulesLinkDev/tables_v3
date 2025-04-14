@@ -12,10 +12,10 @@ import {
 import { arrayMove, SortableContext } from "@dnd-kit/sortable";
 import { restrictToVerticalAxis } from "@dnd-kit/modifiers";
 import debounce from "lodash/debounce";
-import data from "../data/database.json";
 import { DraggableBodyRow } from "./DraggableBodyRow";
 import { useHospitals } from "../context/HospitalContext";
 import { useMediaQuery } from "react-responsive";
+import { City } from "../types/types";
 
 interface Hospital {
   id: string;
@@ -26,11 +26,20 @@ export default function Tables() {
   const { selectedHospitals, setSelectedHospitals, isClient } = useHospitals();
   const [originalOrder, setOriginalOrder] = useState<Hospital[]>([]);
   const [manualOrder, setManualOrder] = useState<{ [key: string]: number }>({});
+  const [cities, setCities] = useState<City[]>([]);
 
   useEffect(() => {
     if (isClient) {
       setOriginalOrder(selectedHospitals);
     }
+    
+    const fetchCities = async () => {
+      const response = await fetch('/data/cities.json');
+      const myCities = await response.json();
+      setCities(myCities);
+    };
+
+    fetchCities();
   }, [selectedHospitals, isClient]);
 
   const sensors = useSensors(
@@ -116,10 +125,16 @@ export default function Tables() {
   };
 
   const getInstitute = (hospitalId: string) => {
-    for (const city of data.cities) {
-      for (const institute of city.children) {
-        if (institute.children.some((h) => h.id === hospitalId)) {
-          return institute.text;
+    for (const city of cities) {
+      // Check if city.children exists and is iterable
+      if (city.children && Array.isArray(city.children)) {
+        for (const institute of city.children) {
+          // Check if institute.children exists and is iterable
+          if (institute.children && Array.isArray(institute.children)) {
+            if (institute.children.some((h) => h.id === hospitalId)) {
+              return institute.text;
+            }
+          }
         }
       }
     }
@@ -127,13 +142,18 @@ export default function Tables() {
   };
 
   const getCity = (hospitalId: string) => {
-    for (const city of data.cities) {
-      if (
-        city.children.some((inst) =>
-          inst.children.some((h) => h.id === hospitalId)
-        )
-      ) {
-        return city.text;
+    for (const city of cities) {
+      // Check if city.children exists and is iterable
+      if (city.children && Array.isArray(city.children)) {
+        if (
+          city.children.some((inst) =>
+            // Check if inst.children exists and is iterable
+            inst.children && Array.isArray(inst.children) && 
+            inst.children.some((h) => h.id === hospitalId)
+          )
+        ) {
+          return city.text;
+        }
       }
     }
     return "";

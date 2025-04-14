@@ -2,7 +2,6 @@ import { ConfigProvider, Layout } from "antd";
 import Tables from "./components/Table";
 import { HospitalLists } from "./components/Lists";
 import { HospitalProvider } from "./context/HospitalContext";
-import data from "./data/database.json";
 import { Content } from "antd/es/layout/layout";
 
 export default function Home() {
